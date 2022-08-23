@@ -1,0 +1,54 @@
+﻿<Window x:Class="GarbageMan.Snapshots"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GarbageMan"
+        mc:Ignorable="d"
+        Title="Snapshots" Icon="assets/Recycle.ico" Height="450" Width="400">
+
+
+    <Grid Background="#f8f8ff">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Snapshots" Margin="5,10,0,10" FontSize="14" />
+        <DataGrid x:Name="SnapshotsDataGrid"
+            Margin="5"
+            ItemsSource="{Binding}"
+            Grid.Row="1"
+            AutoGenerateColumns="false"
+            Background="White"
+            HorizontalGridLinesBrush="#EEEEEE" 
+            VerticalGridLinesBrush="#EEEEEE"
+            CanUserAddRows="False"
+            CanUserSortColumns="False"
+            SelectionChanged="SnapshotsDataGrid_SelectionChanged" MouseLeftButtonDown="SnapshotsDataGrid_MouseLeftButtonDown">
+            <DataGrid.Resources>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                <Style TargetType="{x:Type DataGridCell}">
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                </Style>
+                <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                    <Setter Property="Background" Value="white" />
+                    <Setter Property="Padding" Value="0,5,5,5" />
+                </Style>
+            </DataGrid.Resources>
+
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Snap" Binding="{Binding Id}" Foreground="Black" FontSize="13" Width="Auto" IsReadOnly="True" />
+                <DataGridTextColumn Header="Time" Binding="{Binding Time}" Foreground="Black" FontSize="13" Width="Auto" IsReadOnly="True" />
+                <DataGridTextColumn Header="PID" Binding="{Binding PID}" Foreground="Black" FontSize="13" Width="Auto" IsReadOnly="True" />
+                <DataGridTextColumn Header="Threads" Binding="{Binding ThreadCount}" Foreground="Black" FontSize="13" Width="Auto" IsReadOnly="True" />
+                <DataGridTextColumn Header="Objects" Binding="{Binding ObjectReader.Size}" Foreground="Black" FontSize="13" Width="Auto" IsReadOnly="True" />
+                <DataGridTextColumn Header="Sockets" Binding="{Binding SocketCount}" Foreground="Black" FontSize="13" Width="Auto" IsReadOnly="True" />
+                <DataGridTextColumn Header="IO objects" Binding="{Binding IOCount}" Foreground="Black" FontSize="13" Width="Auto" IsReadOnly="True" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </Grid>
+</Window>

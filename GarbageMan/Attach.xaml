@@ -1,0 +1,91 @@
+﻿<Window x:Class="GarbageMan.Attach"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GarbageMan"
+        mc:Ignorable="d" Closing="Attach_Closing"
+        Title="Attach" Height="300" Width="400" SizeToContent="Height" ResizeMode="NoResize" Icon="assets/Recycle.ico">
+    <Grid Background="#f8f8ff">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Text="Attach to running process" Grid.Row="0" FontSize="14" FontWeight="SemiBold" Margin="5,10,0,10" />
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Process id" Grid.Column="0" Margin="0,0,5,0" />
+            <TextBox x:Name="AttachPidTextBox" Grid.Column="1" Width="50" Margin="0,0,5,0" />
+            <Button x:Name="AttachPidPickerButton" Content="Pick process" Grid.Column="2" Click="AttachPidPickerButton_Click" />
+        </Grid>
+        <Grid Grid.Row="2" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Snapshots" Grid.Column="0" Margin="0,0,5,0" />
+            <TextBox x:Name="AttachSnapshotCountTextBox" Grid.Column="1" Width="50" Text="1" Margin="0,0,5,0" />
+            <TextBlock Text="Interval" Grid.Column="2" Margin="0,0,5,0" />
+            <TextBox x:Name="AttachSnapshotIntervalTextBox" Grid.Column="3" Width="50" Margin="0,0,2,0" />
+            <TextBlock Text="ms" Grid.Column="4" />
+        </Grid>
+        <Grid Grid.Row="3" Margin="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.7*" />
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="5*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="Features" />
+                    <CheckBox x:Name="AttachInitialBasicCheckBox" Content="Basic" IsChecked="True" />
+                    <CheckBox x:Name="AttachInitialHeapCheckBox" Content="Heap" IsChecked="True" />
+                    <CheckBox x:Name="AttachInitialStackCheckBox" Content="Stack" IsChecked="True" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Features (next snapshots)" />
+                    <CheckBox x:Name="AttachNextBasicCheckBox" Content="Basic" IsChecked="True" />
+                    <CheckBox x:Name="AttachNextHeapCheckBox" Content="Heap" IsChecked="True" />
+                    <CheckBox x:Name="AttachNextStackCheckBox" Content="Stack" IsChecked="True" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+        <Grid Grid.Row="4" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Database file name" Grid.Column="0" Margin="0,0,5,0" />
+            <TextBox x:Name="AttachDatabaseNameTextBox" Grid.Column="1" Text="database.db" Margin="0,0,5,0" ToolTip="{Binding RelativeSource={RelativeSource Self}, Path=Text}"/>
+            <Button x:Name="AttachDatabasePickerButton" Content="Pick file" Grid.Column="2" Click="AttachDatabasePickerButton_Click" />
+        </Grid>
+        <Grid Grid.Row="5" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button x:Name="AttachStartButton" Content="Start" Grid.Column="1" Margin="5" Click="AttachStartButton_Click"  />
+            <Button x:Name="AttachCancelButton" Content="Cancel" Grid.Column="2" Margin="5" Click="AttachCancelButton_Click" />            
+        </Grid>
+        <StackPanel Grid.Row="6">
+            <TextBlock x:Name="AttachStatusText" Text="Creating database, please wait..." Margin="10,0,0,5" Visibility="Hidden" />
+            <ProgressBar x:Name="AttachProgressBar" IsIndeterminate="True" Height="5" Margin="20,0,20,10" Visibility="Hidden" />
+        </StackPanel>
+    </Grid>
+</Window>

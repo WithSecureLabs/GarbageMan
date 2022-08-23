@@ -1,0 +1,98 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Platforms>AnyCPU;x86;x64</Platforms>
+    <ApplicationIcon>assets\Recycle.ico</ApplicationIcon>
+    <Authors>Jarkko Turkulainen</Authors>
+    <Description>.NET heap analyzer</Description>
+    <Copyright />
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Version>0.2.2</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="assets\AddBookmark.png" />
+    <None Remove="assets\Analyze.png" />
+    <None Remove="assets\Back.png" />
+    <None Remove="assets\Close.png" />
+    <None Remove="assets\Copy.png" />
+    <None Remove="assets\CSFile.png" />
+    <None Remove="assets\Execute.png" />
+    <None Remove="assets\Exit.png" />
+    <None Remove="assets\Home.png" />
+    <None Remove="assets\New.png" />
+    <None Remove="assets\Open.png" />
+    <None Remove="assets\Process.png" />
+    <None Remove="assets\Recycle.ico" />
+    <None Remove="assets\RemoveBookmark.png" />
+    <None Remove="assets\Save.png" />
+    <None Remove="assets\Search.png" />
+    <None Remove="assets\SmartRefs.png" />
+    <None Remove="assets\SQL.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="6.1.3.50" />
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.226801" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="5.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="PeNet" Version="2.9.3" />
+    <PackageReference Include="PInvoke.Kernel32" Version="0.7.104" />
+    <PackageReference Include="RestoreWindowPlace" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GMLib\GMLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="assets\AddBookmark.png" />
+    <Resource Include="assets\Analyze.png" />
+    <Resource Include="assets\Back.png" />
+    <Resource Include="assets\Close.png" />
+    <Resource Include="assets\Copy.png" />
+    <Resource Include="assets\CSFile.png" />
+    <Resource Include="assets\Execute.png" />
+    <Resource Include="assets\Exit.png" />
+    <Resource Include="assets\Home.png" />
+    <Resource Include="assets\New.png" />
+    <Resource Include="assets\Open.png" />
+    <Resource Include="assets\Process.png" />
+    <Resource Include="assets\Recycle.ico" />
+    <Resource Include="assets\RemoveBookmark.png" />
+    <Resource Include="assets\Save.png" />
+    <Resource Include="assets\Search.png" />
+    <Resource Include="assets\SmartRefs.png" />
+    <Resource Include="assets\SQL.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,60 @@
+﻿<Window x:Class="GarbageMan.PathViewer"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GarbageMan"
+        mc:Ignorable="d"
+        Title="Path Viewer" Height="450" Width="800" Icon="assets/Recycle.ico">
+    <Window.Resources>
+        <local:StripNewlines x:Key="StripNewlines"></local:StripNewlines>
+    </Window.Resources>    
+    <Grid Background="#f8f8ff">
+        <DataGrid Grid.Row="0" x:Name="PathViewerDataGrid"
+            Margin="5"
+            ItemsSource="{Binding}"
+            AutoGenerateColumns="false"
+            Background="White"
+            HorizontalGridLinesBrush="#EEEEEE" 
+            VerticalGridLinesBrush="#EEEEEE"
+            CanUserAddRows="False"
+            CanUserSortColumns="False">
+            <DataGrid.Resources>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                <Style TargetType="{x:Type DataGridCell}">
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                </Style>
+                <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                    <Setter Property="Background" Value="white" />
+                    <Setter Property="Padding" Value="0,5,5,5" />                    
+                </Style>
+            </DataGrid.Resources>
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Address" Width="Auto" Binding="{Binding Address, StringFormat=\{0:X16\}}" Foreground="Black" FontSize="13" FontFamily="Consolas" IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Margin" Value="5,0,5,0" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="RefTo" Width="Auto" Binding="{Binding To}" Foreground="Black" FontSize="13" IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Margin" Value="5,0,5,0" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>           
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Type" Binding="{Binding Type, Converter={StaticResource StripNewlines}}" Width="*" Foreground="DarkBlue" FontSize="13" IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                            <Setter Property="ToolTip" Value="{Binding Type}" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>      
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

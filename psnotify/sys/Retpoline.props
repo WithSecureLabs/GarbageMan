@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalOptions>/d2guardretpoline %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/kernel /INTEGRITYCHECK /d2:-guardretpoline /guard:retpoline %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+    <MASM>
+      <AdditionalOptions>/GuardRetpoline %(AdditionalOptions)</AdditionalOptions>
+    </MASM>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>

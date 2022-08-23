@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GM": {
+      "commandName": "Project",
+      "commandLineArgs": "--pid 20980 --debug "
+    }
+  }
+}

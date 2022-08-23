@@ -1,0 +1,116 @@
+;;;
+;;; psnotify
+;;;
+
+[Version]
+Signature   = "$Windows NT$"
+Class = "AntiVirus"
+ClassGuid = {b1d1a169-c54f-4379-81db-bee7d88d7454}
+Provider    = %ManufacturerName%
+DriverVer   = 
+CatalogFile = psnotify.cat
+DriverPackageType = FileSystemMinifilter
+PnpLockdown=1
+
+[DestinationDirs]
+DefaultDestDir          = 12
+MiniFilter.DriverFiles  = 12
+
+;;
+;; Default install sections
+;;
+
+[DefaultInstall.NTamd64]
+OptionDesc          = %ServiceDescription%
+CopyFiles           = MiniFilter.DriverFiles
+
+[DefaultInstall.NTx86]
+OptionDesc          = %ServiceDescription%
+CopyFiles           = MiniFilter.DriverFiles
+
+[DefaultInstall.NTamd64.Services]
+AddService          = %ServiceName%,,MiniFilter.Service,MiniFilter.EventLog
+
+[DefaultInstall.NTx86.Services]
+AddService          = %ServiceName%,,MiniFilter.Service,MiniFilter.EventLog
+
+;;
+;; Default uninstall sections
+;;
+
+[DefaultUninstall.NTamd64]
+DelFiles   = MiniFilter.DriverFiles
+LegacyUninstall=1
+
+[DefaultUninstall.NTx86]
+DelFiles   = MiniFilter.DriverFiles
+LegacyUninstall=1
+
+[DefaultUninstall.NTamd64.Services]
+DelService = %ServiceName%,0x204      ;Ensure service is stopped before deleting, ensure event-log entry related 'system' log is deleted
+
+[DefaultUninstall.NTx86.Services]
+DelService = %ServiceName%,0x204      ;Ensure service is stopped before deleting, ensure event-log entry related 'system' log is deleted
+;
+; Services Section
+;
+
+[MiniFilter.Service]
+DisplayName      = %DisplayName%
+Description      = %ServiceDescription%
+ServiceBinary    = %12%\%DriverName%.sys        ;%windir%\system32\drivers\
+Dependencies     = "FltMgr"
+ServiceType      = 2                            ;SERVICE_FILE_SYSTEM_DRIVER
+StartType        = 3                            ;SERVICE_DEMAND_START
+ErrorControl     = 1                            ;SERVICE_ERROR_NORMAL
+LoadOrderGroup   = "FSFilter Anti-Virus"
+AddReg           = MiniFilter.AddRegistry
+
+
+;
+; Registry Modifications
+;
+
+[MiniFilter.AddRegistry]
+HKR,"Instances","DefaultInstance",0x00000000,%DefaultInstance%
+HKR,"Instances\"%Instance1.Name%,"Altitude",0x00000000,%Instance1.Altitude%
+HKR,"Instances\"%Instance1.Name%,"Flags",0x00010001,%Instance1.Flags%
+
+;
+; Register as event source
+;
+[MiniFilter.EventLog]
+
+[MiniFilter.EventLog.AddRegistry]
+
+
+;
+; Copy Files
+;
+
+[MiniFilter.DriverFiles]
+%DriverName%.sys
+
+[SourceDisksFiles]
+psnotify.sys = 1,,
+
+[SourceDisksNames]
+1 = %DiskId1%,,,
+
+;;
+;; String Section
+;;
+
+[Strings]
+ManufacturerName        = "F-Secure Corporation"
+ServiceDescription      = "F-Secure PsNotify"
+ServiceName             = "F-Secure PsNotify"
+DisplayName             = "F-Secure PsNotify"
+DriverName              = "psnotify"
+DiskId1                 = "psnotify Device Installation Disk"
+
+;Instances specific information.
+DefaultInstance         = "F-Secure PsNotify"
+Instance1.Name          = "F-Secure PsNotify"
+Instance1.Altitude      = "322001"
+Instance1.Flags         = 0x0              ; Allow all attachments

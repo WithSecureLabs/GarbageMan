@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup />
+  <ItemGroup>
+    <ApplicationDefinition Update="App.xaml">
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Attach.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Bookmarks.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="CrashDump.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="PathViewer.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="PickProcess.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="RawSql.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="RunExecutable.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Snapshots.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Tracer.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Attach.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Bookmarks.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="CrashDump.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="MainWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="PathViewer.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="PickProcess.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="RawSql.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="RunExecutable.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Snapshots.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Tracer.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+</Project>

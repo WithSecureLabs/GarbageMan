@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GarbageMan": {
+      "commandName": "Project",
+      "commandLineArgs": "1122"
+    }
+  }
+}

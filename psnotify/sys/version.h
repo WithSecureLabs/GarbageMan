@@ -1,0 +1,16 @@
+#ifndef VERSION_H
+#define VERSION_H
+
+#define MAJOR 11
+#define MINOR 10
+#define BUILD 249
+#define REVISION 4919
+
+#define PRODUCTMAJOR 11
+#define PRODUCTMINOR 10
+#define PRODUCTBUILD 249
+#define PRODUCTREVISION 4919
+
+#define PRODUCTVERSIONCHECKSUM "9771583"
+
+#endif

@@ -1,0 +1,1026 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GarbageMan" x:Name="GarbageMan"
+        x:Class="GarbageMan.MainWindow"
+        mc:Ignorable="d"
+        Title="GarbageMan" Icon="assets/Recycle.ico" Height="900" Width="1620">
+    <Window.Resources>
+        <local:StripNewlines x:Key="StripNewlines"></local:StripNewlines>
+        <local:SyntaxHighlight x:Key="SyntaxHighlight"></local:SyntaxHighlight>
+        <local:AddExtraSpace x:Key="AddExtraSpace"></local:AddExtraSpace>
+        <RoutedUICommand x:Key="NavigateBack" />
+    </Window.Resources>
+
+    <Window.CommandBindings>
+        <CommandBinding Command="{StaticResource NavigateBack}" Executed="NavigateBack_CommandBinding" />
+    </Window.CommandBindings>
+
+    <Window.InputBindings>
+        <KeyBinding Key="Esc" Command="{StaticResource NavigateBack}" />
+    </Window.InputBindings>
+
+    <Border Padding="5,0,5,0">
+        <Grid Background="#f8f8ff">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <DockPanel Grid.Row="0" Height="20">
+                <Menu DockPanel.Dock="Top">
+                    <MenuItem Header="File">
+                        <MenuItem Header="New">
+                            <MenuItem.Icon>
+                                <Image Source="assets/New.png" />
+                            </MenuItem.Icon>
+                            <MenuItem Header="Attach to process" Click="AttachMenuItem_Click">
+                                <MenuItem.Icon>
+                                    <Image Source="assets/Process.png" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Execute" Click="RunExecutableMenuItem_Click">
+                                <MenuItem.Icon>
+                                    <Image Source="assets/Execute.png" />
+                                </MenuItem.Icon>                                
+                            </MenuItem>
+                            <MenuItem Header="Open process dump" Click="CrashDumpMenuItem_Click" />
+                        </MenuItem>
+                        <MenuItem Header="Open database" Click="OpenMenuItem_Click">
+                            <MenuItem.Icon>
+                                <Image Source="assets/Open.png" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Close database" Click="CloseMenuItem_Click">
+                            <MenuItem.Icon>
+                                <Image Source="assets/Close.png" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="Exit" Click="ExitMenuItem_Click">
+                            <MenuItem.Icon>
+                                <Image Source="assets/Exit.png" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                    <MenuItem Header="Tools">
+                        <MenuItem Header="Search" x:Name="SearchMenu">
+                            <MenuItem.Icon>
+                                <Image Source="assets/Search.png" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Reload search items" Click="ReloadSearchMenuItem_Click" />
+                        <MenuItem Header="Search All" Click="SearchAllMenuItem_Click" />
+                        <MenuItem x:Name="CurrentSnapshotCheckbox" Header="Search current snapshot only" IsCheckable="True" IsChecked="True" />
+                        <MenuItem Header="Run raw SQL" Click="RunRawSqlMenuItem_Click">
+                            <MenuItem.Icon>
+                                <Image Source="assets/SQL.png" />
+                            </MenuItem.Icon>               
+                        </MenuItem>
+                        <MenuItem Header="Reference tracing tool" Click="TraceSmartRefsMenuItem_Click">
+                            <MenuItem.Icon>
+                                <Image Source="assets/SmartRefs.png" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="View snapshots" Click="SnapshotsMenuItem_Click" />
+                    </MenuItem>
+                    <MenuItem Header="Help">
+                        <MenuItem Header="About" Click="AboutMenuItem_Click" />
+                    </MenuItem>
+                </Menu>
+            </DockPanel>
+
+            <Grid Grid.Row="2" Margin="0,10,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Margin="5,0,5,0" Text="Snapshot" Grid.Column="0" VerticalAlignment="Center" />
+                <ComboBox x:Name="SnapshotComboBox" ToolTip="Select snapshot from the database" Margin="0,0,10,0" Grid.Column="1" SelectionChanged="SnapshotComboBox_SelectionChanged"/>
+                <TextBlock Margin="5,0,5,0" Text="Thread" Grid.Column="2" VerticalAlignment="Center" />
+                <ComboBox x:Name="ThreadComboBox" ToolTip="Select thread in the snapshot" Margin="0,0,10,0" Grid.Column="3" ItemsSource="{Binding}" SelectionChanged="ThreadComboBox_SelectionChanged"/>
+                <TextBlock x:Name="StatusTextBlock" Margin="5,0,0,0" Text="Cache usage" Grid.Column="4" VerticalAlignment="Center" Visibility="Hidden" />
+            </Grid>
+            <TabControl x:Name="MainTabControl" Grid.Row="3" SelectedIndex="1">
+                <TabItem Header="General">
+                    <Grid Background="#f8f8ff">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="3*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="General information" Grid.Row="0" FontSize="18" Margin="5,10,0,0" />
+                        <TextBlock x:Name="GeneralStatusText" Grid.Row="1" FontSize="13" Margin="5,10,0,0" />
+                        <TextBlock Text="Runtimes" Grid.Row="2" Margin="5,10,0,0" />
+                        <DataGrid x:Name="RuntimesDataGrid" Grid.Row="3"
+                            Margin="5"
+                            ItemsSource="{Binding}"
+                            IsReadOnly="true" 
+                            AutoGenerateColumns="false" 
+                            Background="White"
+                            HorizontalGridLinesBrush="#EEEEEE" 
+                            VerticalGridLinesBrush="#EEEEEE"
+                            SelectionMode="Single">
+                            <DataGrid.Resources>
+                                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                </Style>
+                                <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="Background" Value="white" />
+                                    <Setter Property="Padding" Value="0,5,5,5" />
+                                </Style>
+                            </DataGrid.Resources>
+
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Version" Binding="{Binding Version}" Foreground="Black" FontSize="13" Width="2*" />
+                                <DataGridTextColumn Header="Dac" Binding="{Binding Dac}" Foreground="DarkOliveGreen" FontWeight="DemiBold" FontSize="13" Width="5*" />
+                                <DataGridTextColumn Header="Architecture" Binding="{Binding Arch}" Foreground="Black" FontSize="13" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="AppDomains" Grid.Row="4" Margin="5,0,0,0" />
+                        <DataGrid x:Name="AppDomainsDataGrid" Grid.Row="5"
+                            Margin="5"
+                            ItemsSource="{Binding}"
+                            IsReadOnly="true" 
+                            AutoGenerateColumns="false" 
+                            Background="White"
+                            HorizontalGridLinesBrush="#EEEEEE" 
+                            VerticalGridLinesBrush="#EEEEEE"
+                            SelectionMode="Single">
+                            <DataGrid.Resources>
+                                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                </Style>
+                                <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="Background" Value="white" />
+                                    <Setter Property="Padding" Value="0,5,5,5" />                                    
+                                </Style>
+                            </DataGrid.Resources>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Address" Binding="{Binding Address, StringFormat=\{0:X16\}}" Foreground="#222222" FontSize="13" FontFamily="Consolas" Width="*" />
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Foreground="DarkOliveGreen" FontWeight="DemiBold" FontSize="13" Width="3*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="Modules" Grid.Row="6" Margin="5,0,0,0" />
+                        <DataGrid x:Name="ModulesDataGrid" Grid.Row="7"
+                            Grid.ColumnSpan="2"
+                            Margin="5"
+                            ItemsSource="{Binding}"
+                            IsReadOnly="true" 
+                            AutoGenerateColumns="false" 
+                            Background="White"
+                            HorizontalGridLinesBrush="#EEEEEE" 
+                            VerticalGridLinesBrush="#EEEEEE"
+                            SelectionMode="Single">
+                            <DataGrid.Resources>
+                                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                </Style>
+                                <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="Background" Value="white" />
+                                    <Setter Property="Padding" Value="0,5,5,5" />                                    
+                                </Style>
+                            </DataGrid.Resources>
+
+                            <DataGrid.ContextMenu>
+                                <ContextMenu x:Name="ModuleContextMenu">
+                                    <MenuItem Header="Copy Image" Click="ModuleContextMenuItem_Image_Click">
+                                        <MenuItem.Icon>
+                                            <Image Source="assets/Copy.png" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Copy Assembly" Click="ModuleContextMenuItem_Assembly_Click">
+                                        <MenuItem.Icon>
+                                            <Image Source="assets/Copy.png" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Copy Module" Click="ModuleContextMenuItem_Module_Click">
+                                        <MenuItem.Icon>
+                                            <Image Source="assets/Copy.png" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>                                    
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
+
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Image" Binding="{Binding ImgAddress, StringFormat=\{0:X16\}}" Foreground="#222222" FontSize="13" FontFamily="Consolas" Width="*" />
+                                <DataGridTextColumn Header="Assembly" Binding="{Binding AsmAddress, StringFormat=\{0:X16\}}" Foreground="#222222" FontSize="13" FontFamily="Consolas" Width="*" />
+                                <DataGridTemplateColumn Header="Flags" Width="0.5*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Name="ValueText" FontSize="13" FontWeight="DemiBold" />
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsPe}" Value="true">
+                                                    <Setter Property="TextBlock.Foreground" Value="DarkGray" TargetName="ValueText" />
+                                                    <Setter Property="TextBlock.Text" Value="PeFile" TargetName="ValueText" />                                                    
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsDynamic}" Value="true">
+                                                    <Setter Property="TextBlock.Foreground" Value="#666666" TargetName="ValueText" />
+                                                    <Setter Property="TextBlock.Text" Value="Dynamic" TargetName="ValueText" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Module" Binding="{Binding Name}" Foreground="DarkOliveGreen" FontWeight="DemiBold" FontSize="13" Width="7.5*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                            <Setter Property="ToolTip" Value="{Binding Name}" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Heap">
+                    <Grid Background="White">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="5" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid x:Name="ObjectGrid" Grid.Column="0" Background="#f8f8ff">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="5" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid x:Name="ObjectNavigationGrid" Grid.Row="0" Margin="5,10,5,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="100" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.Resources>
+                                    <Image x:Key="BackImage" Source="assets\Back.png" />
+                                </Grid.Resources>
+                                <Button x:Name="StartButton" Grid.Column="0" ToolTip="Go the the first item in this snapshot" Margin="0,0,5,0" Click="First_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="assets/Home.png" />
+                                        <TextBlock Margin="5,0">First</TextBlock>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="EndButton" Grid.Column="1" ToolTip="Go to the last item in this snapshot" Content="Last" Margin="5,0,0,0" Click="Last_Click" />
+                                <TextBlock Grid.Column="2" Text="Go to address" Padding="50,1,5,0" />
+                                <TextBox x:Name="NavigationTextBox" Grid.Column="3" ToolTip="Jump to absolute address" KeyDown="Navigation_KeyDown" />
+                                <Button x:Name="JumpButton" Grid.Column="4" Click="JumpButton_Click" Margin="10,0,0,0">Jump</Button>
+                                <CheckBox x:Name="AutoAnalyzeCheckBox" Grid.Column="5" ToolTip="Analyze object references automatically on selection (slow with big databases)" IsChecked="True" Margin="50,0,10,0" Checked="AutoAnalyzeCheckBox_Checked">Analyze refs automatically</CheckBox>
+                                <Button x:Name="BookMarkButton" Grid.Column="6" ToolTip="Open bookmarks window" Click="Bookmark_Click" Margin="10,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="assets/AddBookmark.png" />
+                                        <TextBlock Margin="5,0">Bookmarks</TextBlock>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="BackButton" Grid.Column="8" ToolTip="Go back to previous item" Click="BackButton_Click" Margin="10,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="assets/Back.png" />
+                                        <TextBlock Margin="5,0">Back</TextBlock>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            <DataGrid x:Name="ObjectDataGrid" Grid.Row="1"
+                              Margin="5" 
+                              ItemsSource="{Binding}" 
+                              IsReadOnly="true" 
+                              AutoGenerateColumns="false" 
+                              Background="White"
+                              HorizontalGridLinesBrush="#EEEEEE" 
+                              VerticalGridLinesBrush="#EEEEEE"
+                              SelectionUnit="FullRow"
+                              SelectionMode="Single"
+                              SelectionChanged="ObjectDataGrid_SelectionChanged" PreviewKeyDown="ObjectDataGrid_PreviewKeyDown" PreviewMouseLeftButtonDown="ObjectDataGrid_PreviewMouseLeftButtonDown">
+                                <DataGrid.Resources>
+                                    <RoutedUICommand x:Key="ViewObject" />
+                                    <RoutedUICommand x:Key="AnalyzeObject" />
+                                    <RoutedUICommand x:Key="TraceObject" />
+                                    <RoutedUICommand x:Key="AddBookmark" />
+                                    <RoutedUICommand x:Key="RemoveBookmark" />
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="LightGray"/>
+                                    <Style TargetType="{x:Type DataGridCell}">
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                    </Style>
+                                    <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                        <Setter Property="Background" Value="white" />
+                                        <Setter Property="Padding" Value="0,5,5,5" />
+                                    </Style>
+                                </DataGrid.Resources>
+
+                                <DataGrid.CommandBindings>
+                                    <CommandBinding Command="{StaticResource ViewObject}"  Executed="ObjectViewCommandBinding_Executed" />
+                                    <CommandBinding Command="{StaticResource AnalyzeObject}"  Executed="ObjectAnalyzeCommandBinding_Executed" />
+                                    <CommandBinding Command="{StaticResource TraceObject}"  Executed="ObjectTraceCommandBinding_Executed" />
+                                    <CommandBinding Command="{StaticResource AddBookmark}"  Executed="ObjectAddBookmarkCommandBinding_Executed" />
+                                    <CommandBinding Command="{StaticResource RemoveBookmark}"  Executed="ObjectRemoveBookmarkCommandBinding_Executed" />
+                                </DataGrid.CommandBindings>
+
+                                <DataGrid.InputBindings>
+                                    <KeyBinding Key="F1" Command="{StaticResource ViewObject}" />
+                                    <KeyBinding Key="F2" Command="{StaticResource AnalyzeObject}" />
+                                    <KeyBinding Key="F3" Command="{StaticResource TraceObject}" />
+                                    <KeyBinding Key="F9" Command="{StaticResource AddBookmark}" />
+                                    <KeyBinding Key="F10" Command="{StaticResource RemoveBookmark}" />
+                                </DataGrid.InputBindings>
+                                
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu x:Name="ObjectContextMenu">
+                                        <MenuItem Header="Copy Address" Click="ObjectContextMenuItem_Address_Click">
+                                            <MenuItem.Icon>
+                                                <Image Source="assets/Copy.png" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Copy Type" Click="ObjectContextMenuItem_Type_Click">
+                                            <MenuItem.Icon>
+                                                <Image Source="assets/Copy.png" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Copy Value" Click="ObjectContextMenuItem_Value_Click">
+                                            <MenuItem.Icon>
+                                                <Image Source="assets/Copy.png" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator />
+                                        <MenuItem Header="View object" Command="{StaticResource ViewObject}"  InputGestureText="F1">
+                                            <MenuItem.Icon>
+                                                <Image Source="assets/Search.png" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>              
+                                        <MenuItem Header="Analyze references" Command="{StaticResource AnalyzeObject}" InputGestureText="F2">
+                                            <MenuItem.Icon>
+                                                <Image Source="assets/Analyze.png" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Trace references" Command="{StaticResource TraceObject}" InputGestureText="F3">
+                                            <MenuItem.Icon>
+                                                <Image Source="assets/SmartRefs.png" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>               
+                                        <Separator />
+                                        <MenuItem Header="Add Bookmark" Command="{StaticResource AddBookmark}" InputGestureText="F9">
+                                            <MenuItem.Icon>
+                                                <Image Source="assets/AddBookmark.png" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Remove Bookmark" Command="{StaticResource RemoveBookmark}" InputGestureText="F10">
+                                            <MenuItem.Icon>
+                                                <Image Source="assets/RemoveBookmark.png" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Item" CanUserSort="False" Width="0.6*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Name="ItemText" Text="{Binding Item}" Foreground="black" FontSize="13" />
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsBookmarked}" Value="true">
+                                                        <Setter Property="TextBlock.FontWeight" Value="Bold" TargetName="ItemText" />
+                                                        <Setter Property="TextBlock.Foreground" Value="DarkOliveGreen" TargetName="ItemText" />                                                        
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsTraced}" Value="true">
+                                                        <Setter Property="TextBlock.FontWeight" Value="Bold" TargetName="ItemText" />
+                                                        <Setter Property="TextBlock.Foreground" Value="DarkBlue" TargetName="ItemText" />                                                        
+                                                    </DataTrigger> 
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Address" Binding="{Binding Address, StringFormat=\{0:X16\}}" FontSize="13" FontFamily="Consolas" Foreground="#222222" CanUserSort="False" Width="1.4*"/>
+                                    <DataGridTextColumn Header="Size" Binding="{Binding Size}" Foreground="Black" FontSize="13" CanUserSort="False" Width="0.5*" />
+                                    <DataGridTextColumn Header="Type" Binding="{Binding Type, Converter={StaticResource StripNewlines}}" Foreground="DarkBlue" FontSize="13" CanUserSort="False" Width="3*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                <Setter Property="ToolTip" Value="{Binding Type}" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTemplateColumn Header="Value" ClipboardContentBinding="{Binding Value, Converter={StaticResource StripNewlines}}" CanUserSort="False" Width="5*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Name="ValueText" Text="{Binding Value, Converter={StaticResource StripNewlines}}" TextTrimming="CharacterEllipsis" Foreground="DarkOliveGreen" FontSize="13" FontWeight="DemiBold" />
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding IsBlob}" Value="true">
+                                                        <Setter Property="TextBlock.Foreground" Value="Gray" TargetName="ValueText" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsNull}" Value="true">
+                                                        <Setter Property="TextBlock.Foreground" Value="LightGray" TargetName="ValueText" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsString}" Value="true">
+                                                        <Setter Property="TextBlock.Foreground" Value="SaddleBrown" TargetName="ValueText" />
+                                                        <Setter Property="TextBlock.ToolTip" Value="{Binding Value}" />
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch" />
+                            <Grid x:Name="ObjectSearchGrid" Grid.Row="3" Background="#f8f8ff">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Grid x:Name="ObjectSearchInputGrid" Grid.Row="0" Margin="5,10,5,5" Background="#f8f8ff">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="3*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="100" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Snapshot" Margin="5,0,5,0" Grid.Column="0" VerticalAlignment="Center" />
+                                    <ComboBox x:Name="SearchInputSnapshot" Margin="0,0,5,0" Grid.Column="1" SelectedIndex="0" ToolTip="Search from current or all snapshots">
+                                        <ComboBoxItem Content="Current" />
+                                        <ComboBoxItem Content="Any" />
+                                    </ComboBox>
+                                    <TextBlock Text="Type" Margin="5,0,5,0" Grid.Column="2" VerticalAlignment="Center" />
+                                    <TextBox x:Name="SearchInputType" ToolTip="Search for types (use =Type for exact match)" Margin="0,0,5,0" Grid.Column="3" KeyDown="SearchInputType_KeyDown" />
+                                    <TextBlock Text="Value" Margin="5,0,5,0" Grid.Column="4" VerticalAlignment="Center" />
+                                    <TextBox x:Name="SearchInputValue" ToolTip="Search for value (use =Value for exact match)" Grid.Column="5" KeyDown="SearchInputValue_KeyDown" />
+                                    <TextBlock Text="Order by" Padding="5,0,5,0" Grid.Column="6" VerticalAlignment="Center" />
+                                    <ComboBox x:Name="SearchInputOrderby" Padding="5,0,5,0" Grid.Column="7" SelectedIndex="0" ToolTip="Sort by address or size">
+                                        <ComboBoxItem Content="Address"  />
+                                        <ComboBoxItem Content="Size"  />
+                                    </ComboBox>
+                                    <TextBlock Text="Limit" Padding="5,0,5,0" Grid.Column="8" VerticalAlignment="Center" />
+                                    <ComboBox x:Name="SearchInputLimit" Margin="5,0,5,0" Grid.Column="9" SelectedIndex="2">
+                                        <ComboBoxItem Content="5" />
+                                        <ComboBoxItem Content="10" />
+                                        <ComboBoxItem Content="100" />
+                                        <ComboBoxItem Content="1000" />
+                                        <ComboBoxItem Content="Unlimited" />
+                                    </ComboBox>
+                                    <ComboBox x:Name="SearchInputOrderAsc" ToolTip="Sort order" Margin="5,0,5,0" Grid.Column="10" SelectedIndex="0">
+                                        <ComboBoxItem Content="Asc" />
+                                        <ComboBoxItem Content="Desc" />
+                                    </ComboBox>
+                                    <Button x:Name="SearchButton" Margin="10,0,0,0" Grid.Column="11" Click="SearchButton_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="assets/Search.png" />
+                                            <TextBlock Margin="5,0">Search</TextBlock>
+                                        </StackPanel>
+                                    </Button>
+
+                                </Grid>
+                                <DataGrid x:Name="ObjectSearchDataGrid"
+                                    Margin="5"
+                                    ItemsSource="{Binding}"
+                                    Grid.Row="1"
+                                    IsReadOnly="true" 
+                                    AutoGenerateColumns="false"
+                                    Background="White"
+                                    HorizontalGridLinesBrush="#EEEEEE" 
+                                    VerticalGridLinesBrush="#EEEEEE"
+                                    SelectionMode="Single"
+                                    SelectionChanged="ObjectSearchDataGrid_SelectionChanged" MouseLeftButtonDown="ObjectSearchDataGrid_MouseLeftButtonDown">
+                                    <DataGrid.Resources>
+                                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                                        <Style TargetType="{x:Type DataGridCell}">
+                                            <Setter Property="BorderThickness" Value="0" />
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        </Style>
+                                        <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                            <Setter Property="Background" Value="white" />
+                                            <Setter Property="Padding" Value="0,5,5,5" />
+                                        </Style>
+                                    </DataGrid.Resources>
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu x:Name="ObjectSearchContextMenu">
+                                            <MenuItem Header="Copy Address" Click="ObjectSearchContextMenuItem_Address_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Source="assets/Copy.png" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Copy Type" Click="ObjectSearchContextMenuItem_Type_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Source="assets/Copy.png" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Copy Value" Click="ObjectSearchContextMenuItem_Value_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Source="assets/Copy.png" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Snap" Binding="{Binding Snapshot}" Foreground="Black" FontSize="13" Width="0.6*" />
+                                        <DataGridTextColumn Header="Address" Binding="{Binding Address, StringFormat=\{0:X16\}}" Width="1.4*" Foreground="#222222" FontFamily="Consolas" FontSize="13" />
+                                        <DataGridTextColumn Header="Size" Binding="{Binding Size}" Foreground="Black" FontSize="13" Width="0.5*" />
+                                        <DataGridTextColumn Header="Type" Binding="{Binding Type, Converter={StaticResource StripNewlines}}" Width="3*" Foreground="DarkBlue" FontSize="13">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                    <Setter Property="ToolTip" Value="{Binding Type}" />
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Value" Binding="{Binding Repr, Converter={StaticResource StripNewlines}}" Width="5*" Foreground="DarkBlue" FontSize="13">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                    <Setter Property="ToolTip" Value="{Binding Repr}" />
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>                                            
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Grid>
+                        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" />
+                        <Grid x:Name="ObjectViewGrid" Grid.Column="2" Background="#f8f8ff">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="2*" />
+                                <RowDefinition Height="5" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="5" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="5,10,5,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="100" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox x:Name="AutoViewCheckBox" Grid.Column="0" ToolTip="View object automatically on selection" IsChecked="True" Checked="AutoAnalyzeCheckBox_Checked">View automatically</CheckBox>
+                                <Button x:Name="SaveBinaryButton" Grid.Column="1" ToolTip="Save data as binary to disk" Click="SaveBinaryButton_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="assets/Save.png" />
+                                        <TextBlock Margin="5,0">Save</TextBlock>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            <Grid Grid.Row="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ScrollViewer x:Name="ObjectViewImage" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Grid.Row="0" Visibility="Hidden" >
+                                    <Image x:Name="ObjectViewImageData" Stretch="None" RenderOptions.BitmapScalingMode="HighQuality" />
+                                </ScrollViewer>
+                                <DataGrid x:Name="ObjectViewDataGrid"
+                                    HeadersVisibility="None"
+                                    Margin="5"
+                                    ItemsSource="{Binding}"
+                                    Grid.Row="0"
+                                    IsReadOnly="true" 
+                                    AutoGenerateColumns="false" 
+                                    Background="White"
+                                    HorizontalGridLinesBrush="#FFFFFF" 
+                                    VerticalGridLinesBrush="DarkGray" Visibility="Visible">
+
+                                    <DataGrid.Resources>
+                                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EEEEEE"/>
+                                        <Style TargetType="{x:Type DataGridCell}">
+                                            <Setter Property="BorderThickness" Value="0" />
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        </Style>
+                                        <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                            <Setter Property="Background" Value="white" />
+                                            <Setter Property="Padding" Value="5" />                                            
+                                        </Style>
+                                    </DataGrid.Resources>
+
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu x:Name="ObjectViewContextMenu">
+                                            <MenuItem Header="Copy as Hex string" Click="ObjectViewContextMenuItem_Hex_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Source="assets/Copy.png" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Offset" Binding="{Binding Offset, StringFormat=\{0:X8\}}" Width="Auto" Foreground="Gray" FontSize="12" FontFamily="Consolas" CanUserSort="False" />
+                                        <DataGridTextColumn Header="HEX" Binding="{Binding Hex}" Width="Auto" Foreground="DarkBlue" FontSize="12" FontFamily="Consolas" CanUserSort="False" />
+                                        <DataGridTextColumn Header="ASCII" Binding="{Binding Ascii}" Width="Auto" Foreground="SaddleBrown" FontSize="12" FontFamily="Consolas" CanUserSort="False" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <Grid Grid.Row="1" Margin="0,0,0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Margin="5,3,0,0" Text="Printable:"  />
+                                    <TextBox Grid.Column="1" Margin="5,0,5,0" x:Name="DataViewPrintable" TextWrapping="NoWrap" Foreground="DarkBlue" FontSize="12" />
+                                </Grid>
+                            </Grid>
+                            <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch" />
+                            <Grid x:Name="RefsToGrid" Grid.Row="3">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Padding="5,0,0,5" Text="Referencing To" ToolTip="Objects this object is referencing to" />
+
+                                <DataGrid x:Name="RefToDataGrid"
+                                    Margin="5"
+                                    ItemsSource="{Binding}"
+                                    Grid.Row="1"
+                                    IsReadOnly="true" 
+                                    AutoGenerateColumns="false" 
+                                    Background="White"
+                                    HorizontalGridLinesBrush="#EEEEEE"
+                                    VerticalGridLinesBrush="#EEEEEE"
+                                    SelectionMode="Single"
+                                    SelectionChanged="RefToDataGrid_SelectionChanged"
+                                    MouseLeftButtonDown="RefToDataGrid_MouseLeftButtonDown">
+
+                                    <DataGrid.Resources>
+                                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                                        <Style TargetType="{x:Type DataGridCell}">
+                                            <Setter Property="BorderThickness" Value="0" />
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        </Style>
+                                        <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                            <Setter Property="Background" Value="white" />
+                                            <Setter Property="Padding" Value="0,5,5,5" />                                            
+                                        </Style>
+                                    </DataGrid.Resources>
+
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu x:Name="RefToContextMenu">
+                                            <MenuItem Header="Copy Address" Click="RefToContextMenuItem_Address_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Source="assets/Copy.png" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Copy Type" Click="RefToContextMenuItem_Type_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Source="assets/Copy.png" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Copy Value" Click="RefToContextMenuItem_Value_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Source="assets/Copy.png" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Address" Binding="{Binding Data.Address, StringFormat=\{0:X16\}}" Width="Auto" FontFamily="Consolas" Foreground="black" FontSize="13" />
+                                        <DataGridTextColumn Header="Type" Binding="{Binding Data.Type, Converter={StaticResource StripNewlines}}" Width="*" Foreground="DarkBlue" FontSize="13">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                    <Setter Property="ToolTip" Value="{Binding Data.Type}" />
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Value" Binding="{Binding Data.Repr, Converter={StaticResource StripNewlines}}" Width="*" Foreground="DarkBlue" FontSize="13">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                    <Setter Property="ToolTip" Value="{Binding Data.Repr}" />
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                            <GridSplitter Grid.Row="4" Height="5" HorizontalAlignment="Stretch" />
+                            <Grid x:Name="RefsByGrid" Grid.Row="5">
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Padding="5" Text="Referenced By" ToolTip="This object is referenced by these objects" />
+
+                                <DataGrid x:Name="RefByDataGrid"
+                                    Margin="5"
+                                    ItemsSource="{Binding}"
+                                    Grid.Row="5"
+                                    IsReadOnly="true" 
+                                    AutoGenerateColumns="false" 
+                                    Background="White"
+                                    HorizontalGridLinesBrush="#EEEEEE" 
+                                    VerticalGridLinesBrush="#EEEEEE"
+                                    SelectionMode="Single"
+                                    SelectionChanged="RefByDataGrid_SelectionChanged"
+                                    MouseLeftButtonDown="RefByDataGrid_MouseLeftButtonDown">
+
+                                    <DataGrid.Resources>
+                                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                                        <Style TargetType="{x:Type DataGridCell}">
+                                            <Setter Property="BorderThickness" Value="0" />
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        </Style>
+                                        <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                            <Setter Property="Background" Value="white" />
+                                            <Setter Property="Padding" Value="0,5,5,5" />                                            
+                                        </Style>
+                                    </DataGrid.Resources>
+
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu x:Name="RefByContextMenu">
+                                            <MenuItem Header="Copy Address" Click="RefByContextMenuItem_Address_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Source="assets/Copy.png" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Copy Type" Click="RefByContextMenuItem_Type_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Source="assets/Copy.png" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Copy Value" Click="RefByContextMenuItem_Value_Click">
+                                                <MenuItem.Icon>
+                                                    <Image Source="assets/Copy.png" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Address" Binding="{Binding Data.Address, StringFormat=\{0:X16\}}" Width="Auto" Foreground="Black" FontFamily="Consolas" FontSize="13" />
+                                        <DataGridTextColumn Header="Type" Binding="{Binding Data.Type, Converter={StaticResource StripNewlines}}" Width="*" Foreground="DarkBlue" FontSize="13">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                    <Setter Property="ToolTip" Value="{Binding Data.Type}" />
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>                                            
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Value" Binding="{Binding Data.Repr, Converter={StaticResource StripNewlines}}" Width="*" Foreground="DarkBlue" FontSize="13">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                    <Setter Property="ToolTip" Value="{Binding Data.Repr}" />
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>                                            
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+
+                        </Grid>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Stack">
+                    <Grid Background="#f8f8ff">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="5" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="5" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="Frames" Margin="5,10,0,5" FontSize="14" />
+
+                                    <DataGrid x:Name="FrameDataGrid" Grid.Row="1"
+                                    Margin="5"
+                                    ItemsSource="{Binding}"
+                                    IsReadOnly="true" 
+                                    AutoGenerateColumns="false" 
+                                    Background="White"
+                                    HorizontalGridLinesBrush="#EEEEEE" 
+                                    VerticalGridLinesBrush="#EEEEEE"
+                                    SelectionMode="Single">
+                                        <DataGrid.Resources>
+                                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                                            <Style TargetType="{x:Type DataGridCell}">
+                                                <Setter Property="BorderThickness" Value="0" />
+                                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                            </Style>
+                                            <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                                <Setter Property="Background" Value="white" />
+                                                <Setter Property="Padding" Value="0,5,0,5" />
+                                            </Style>
+                                        </DataGrid.Resources>
+
+                                        <DataGrid.ContextMenu>
+                                            <ContextMenu x:Name="FrameContextMenu">
+                                                <MenuItem Header="Copy Frame" Click="FrameContextMenuItem_Frame_Click">
+                                                    <MenuItem.Icon>
+                                                        <Image Source="assets/Copy.png" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </DataGrid.ContextMenu>
+
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="StackPtr" Binding="{Binding StackPtr, StringFormat=\{0:X16\}}" Foreground="#222222" FontSize="13" FontFamily="Consolas" Width="*" />
+                                            <DataGridTextColumn Header="InstructionPtr" Binding="{Binding IP, StringFormat=\{0:X16\}}" Foreground="#222222" FontSize="13" FontFamily="Consolas" Width="*" />
+
+                                            <DataGridTemplateColumn Header="Frame" ClipboardContentBinding="{Binding Frame}" Width="6*">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <local:FrameTextBlock x:Name="FrameText" RichText="{Binding Path=Frame, Converter={StaticResource SyntaxHighlight}}" ToolTip="{Binding Frame}" TextTrimming="CharacterEllipsis" FontSize="13" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                            </Grid>
+                            <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
+                            <Grid Grid.Row="2">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="Stack" Margin="5,0,0,5" FontSize="14" />
+
+                                    <DataGrid x:Name="StackDataGrid" Grid.Row="1" Visibility="Visible"
+                                    Margin="5"
+                                    ItemsSource="{Binding}"
+                                    IsReadOnly="true" 
+                                    AutoGenerateColumns="false" 
+                                    Background="White"
+                                    HorizontalGridLinesBrush="#EEEEEE" 
+                                    VerticalGridLinesBrush="#EEEEEE"
+                                    SelectionMode="Single" MouseLeftButtonDown="StackDataGrid_MouseLeftButtonDown">
+                                        <DataGrid.Resources>
+                                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                                            <Style TargetType="{x:Type DataGridCell}">
+                                                <Setter Property="BorderThickness" Value="0" />
+                                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                            </Style>
+                                            <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                                <Setter Property="Background" Value="white" />
+                                                <Setter Property="Padding" Value="0,5,0,5" />                                                
+                                            </Style>
+                                        </DataGrid.Resources>
+
+                                        <DataGrid.ContextMenu>
+                                            <ContextMenu x:Name="StackContextMenu">
+                                                <MenuItem Header="Copy object address" Click="StackContextMenuItem_Address_Click">
+                                                    <MenuItem.Icon>
+                                                        <Image Source="assets/Copy.png" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Copy Type" Click="StackContextMenuItem_Type_Click">
+                                                    <MenuItem.Icon>
+                                                        <Image Source="assets/Copy.png" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Copy Value" Click="StackContextMenuItem_Value_Click">
+                                                    <MenuItem.Icon>
+                                                        <Image Source="assets/Copy.png" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </DataGrid.ContextMenu>
+
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="StackPtr" Binding="{Binding StackPtr, StringFormat=\{0:X16\}}" Foreground="#222222" FontSize="13" FontFamily="Consolas" Width="*" />
+                                            <DataGridTextColumn Header="Object" Binding="{Binding Data.Address, StringFormat=\{0:X16\}}" Foreground="#222222" FontSize="13" FontFamily="Consolas" Width="*" />
+                                            <DataGridTextColumn Header="Type" Binding="{Binding Data.Type, Converter={StaticResource StripNewlines}}" Foreground="DarkBlue" FontSize="13" Width="3*">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                        <Setter Property="ToolTip" Value="{Binding Data.Type}" />
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+
+                                            <DataGridTemplateColumn Header="Value" ClipboardContentBinding="{Binding Value}" CanUserSort="False" Width="3*">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Name="ValueText" Text="{Binding Data.Value, Converter={StaticResource StripNewlines}}" TextTrimming="CharacterEllipsis" Foreground="DarkOliveGreen" FontSize="13" FontWeight="DemiBold" />
+                                                        <DataTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding Data.IsBlob}" Value="true">
+                                                                <Setter Property="TextBlock.Foreground" Value="LightGray" TargetName="ValueText" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Data.IsNull}" Value="true">
+                                                                <Setter Property="TextBlock.Foreground" Value="LightGray" TargetName="ValueText" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Data.IsString}" Value="true">
+                                                                <Setter Property="TextBlock.Foreground" Value="SaddleBrown" TargetName="ValueText" />
+                                                                <Setter Property="TextBlock.ToolTip" Value="{Binding Data.Value}" />
+                                                            </DataTrigger>
+                                                        </DataTemplate.Triggers>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                        
+                        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" />
+
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Thread Context" Margin="5,10,0,5" FontSize="14" />
+
+                            <DataGrid x:Name="ThreadContextDataGrid" Grid.Row="1"
+                                    Margin="5"
+                                    ItemsSource="{Binding}"
+                                    IsReadOnly="true" 
+                                    AutoGenerateColumns="false" 
+                                    Background="White"
+                                    HorizontalGridLinesBrush="#EEEEEE" 
+                                    VerticalGridLinesBrush="#EEEEEE"
+                                    SelectionMode="Single">
+                                <DataGrid.Resources>
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#EFEFEF"/>
+                                    <Style TargetType="{x:Type DataGridCell}">
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                    </Style>
+                                    <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                                        <Setter Property="Background" Value="white" />
+                                        <Setter Property="Padding" Value="0,5,5,5" />
+                                    </Style>
+                                </DataGrid.Resources>
+
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu x:Name="ThreadContextContextMenu">
+                                        <MenuItem Header="Copy Value" Click="ThreadContextContextMenuItem_Frame_Click">
+                                            <MenuItem.Icon>
+                                                <Image Source="assets/Copy.png" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Reg" Binding="{Binding Reg}" Foreground="#222222" FontSize="13" FontFamily="Consolas" Width="Auto" />
+                                    <DataGridTemplateColumn Header="Value" ClipboardContentBinding="{Binding Value}" CanUserSort="False" Width="Auto">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Name="ValueText" Margin="5,0,5,0" Text="{Binding Value, StringFormat=\{0:X16\}}" Foreground="DarkOliveGreen" FontSize="13" FontFamily="Consolas" />
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding HasData}" Value="true">
+                                                        <Setter Property="TextBlock.Foreground" Value="SaddleBrown" TargetName="ValueText" />
+                                                        <Setter Property="TextBlock.FontWeight" Value="DemiBold" TargetName="ValueText" />                                                        
+                                                        <Setter Property="TextBlock.ToolTip" Value="{Binding DataPreview}" />
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>                                    
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <Platforms>AnyCPU;x86;x64</Platforms>
+    <ApplicationIcon>Recycle.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.226801" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GMLib\GMLib.csproj" />
+  </ItemGroup>
+
+</Project>
