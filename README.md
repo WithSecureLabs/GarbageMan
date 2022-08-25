@@ -9,15 +9,9 @@
 - Ability to overcome malware anti-dumping techniques (`psnotify`)
 
 
-More detailed description, background information and usage instructions can be found in WithSecure Labs tools: https://labs.withsecure.com/tools/
+More detailed description, background information and usage instructions can be found in WithSecure Labs tools: https://labs.withsecure.com/tools/garbageman/
 
 More details about the `psnotify` can be found here: [psnotify/README.md](psnotify).
-
-
-## Videos
-
-Couple of videos showcasing some key functionality of `GarbageMan`.
-
 
 
 ## How to get it?
