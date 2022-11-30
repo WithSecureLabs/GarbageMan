@@ -119,7 +119,7 @@ namespace GarbageMan
                 System.Windows.MessageBox.Show("Please pick proper filename", "RunExecutable", MessageBoxButton.OK, MessageBoxImage.Information);
             else
             {
-                string cmdLine = $"--path {path} --delay {delay} --dbpath {RealPath} --items {initialFlags} ";
+                string cmdLine = $"--path \"{path}\" --delay {delay} --dbpath {RealPath} --items {initialFlags} ";
                 if (args != "")
                     cmdLine += $"--arguments \"{args}\" ";
                 if (count > 1)
