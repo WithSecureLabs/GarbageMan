@@ -121,7 +121,7 @@ namespace GarbageMan
             {
                 string cmdLine = $"--path \"{path}\" --delay {delay} --dbpath {RealPath} --items {initialFlags} ";
                 if (args != "")
-                    cmdLine += $"--arguments \"{args}\" ";
+                    cmdLine += $"--arguments=\"{args}\" ";
                 if (count > 1)
                     cmdLine += $"--count {count} --interval {interval} --nextitems {nextFlags}";
 
