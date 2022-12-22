@@ -94,6 +94,7 @@ namespace GarbageMan
             // Get all the settings
             string path = RunExecutablePathTextBox.Text;
             string args = RunExectableArgsTextBox.Text;
+            string workingDirectory = RunExectableWorkingDirTextBox.Text;
             int delay = int.Parse((RunExecutableDelayTextBox.Text == "") ? "" : RunExecutableDelayTextBox.Text);
             int count = int.Parse((RunExecutableSnapshotCountTextBox.Text == "") ? "1" : RunExecutableSnapshotCountTextBox.Text);
             int interval = int.Parse((RunExecutableSnapshotIntervalTextBox.Text == "") ? "0" : RunExecutableSnapshotIntervalTextBox.Text);
@@ -122,6 +123,8 @@ namespace GarbageMan
                 string cmdLine = $"--path \"{path}\" --delay {delay} --dbpath {RealPath} --items {initialFlags} ";
                 if (args != "")
                     cmdLine += $"--arguments=\"{args}\" ";
+                if (workingDirectory != "")
+                    cmdLine += $"--workingdirectory=\"{workingDirectory}\" ";
                 if (count > 1)
                     cmdLine += $"--count {count} --interval {interval} --nextitems {nextFlags}";
 
