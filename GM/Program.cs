@@ -36,6 +36,9 @@ namespace GM
             [Option(SetName = "path", HelpText = "Program arguments.")]
             public string Arguments { get; set; }
 
+            [Option(SetName = "path", HelpText = "Set the working directory (Default: %SYSTEMROOT%\\system32)")]
+            public string WorkingDirectory { get; set; }
+
             [Option(SetName = "path", HelpText = "Wait before attaching (ms).")]
             public int Delay { get; set; }
 
@@ -207,6 +210,7 @@ namespace GM
                     path: opts.Path,
                     dataBasePath: opts.DBPath,
                     args: opts.Arguments,
+                    workingDirectory: opts.WorkingDirectory,
                     delay: opts.Delay,
                     dumpInterval: opts.Interval,
                     dumpCount: opts.Count,

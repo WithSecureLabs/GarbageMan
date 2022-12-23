@@ -33,6 +33,8 @@ Crash course:
 
 If you need to use `psnotify` for dumping, you need to extract it to `C:\psnotify` (yes, that's fixed for now). Just run `psnotify.exe` and stop it with `Ctrl+C` when done. It will create minidumps in `C:\dumps`. You can later then analyze those dumps with GarbageMan.
 
+**Note**: If you'd like to specify a working directory for the program to execute from, make sure psnotify isn't running as it will conflict with GarbageMan.
+
 
 ## How to compile the GUI tool
 

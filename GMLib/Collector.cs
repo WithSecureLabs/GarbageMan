@@ -29,6 +29,7 @@ namespace GMLib
         public int Count { get; set; }
         public string Path { get; set; }
         public string Args { get; set; }
+        public string WorkingDirectory { get; set; }
         public int Delay { get; set; }
         public string CrashDump { get; set; }
         public int Pid { get; set; }
@@ -80,9 +81,11 @@ namespace GMLib
             DataBasePath = dataBasePath;
         }
 
+        // Added the option to set the working directory for the process
         public Collector(
             string path,
             string args,
+            string workingDirectory,
             int delay = 500,
             uint flags = Constants.COLLECT_EVERYTHING,
             uint initialFlags = Constants.COLLECT_EVERYTHING,
@@ -92,6 +95,7 @@ namespace GMLib
         {
             Path = path;
             Args = args;
+            WorkingDirectory = workingDirectory;
             Delay = delay;
             Interval = dumpInterval;
             Count = dumpCount;
@@ -158,6 +162,8 @@ namespace GMLib
                     proc.StartInfo.FileName = Path;
                     if (Args != null)
                         proc.StartInfo.Arguments = Args;
+                    if (WorkingDirectory != null)
+                        proc.StartInfo.WorkingDirectory = WorkingDirectory;
                     proc.StartInfo.CreateNoWindow = true;
                     proc.Start();
                     Pid = proc.Id;
