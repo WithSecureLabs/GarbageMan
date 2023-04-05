@@ -130,6 +130,7 @@ namespace GMLib
                         process.Pid = Pid;
                         process.Arch = IntPtr.Size == 8 ? "AMD64" : "X86";
                         process.Date = DateTime.Now.ToString();
+                        process.Path = "";
                     }
                     try
                     {
@@ -204,7 +205,7 @@ namespace GMLib
                     DbgMsg(evt.Msg);
                 };
 
-                DbgMsg($"Processing target {id} with pid={target.Pid}...");
+                DbgMsg($"Action: Processing target {id} with pid={target.Pid}...");
                 try
                 {
                     target.Collect();
@@ -225,12 +226,17 @@ namespace GMLib
                 }
 
                 if (DataBasePath != null)
-                    DbgMsg("Adding target to database...");
+                    DbgMsg("Beginning Database coordination...");
 
                 // Add the process only once
                 if (id == 1)
+                {
+                    DbgMsg("Adding process to database...");
                     Db?.AddProcess(process);
+                }
+                DbgMsg("Adding snapshot to database...");
                 Db?.AddSnapshot(snapshot);
+                DbgMsg("Adding target to database...");
                 Db?.AddTarget(target);
                 target.Close();
 
