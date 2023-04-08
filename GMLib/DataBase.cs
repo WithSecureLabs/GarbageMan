@@ -8,6 +8,12 @@ using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.Diagnostics.Runtime;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Diagnostics;
+using System.Threading;
+using System.Collections;
+using System.Reflection.Metadata;
+
 
 namespace GMLib
 {
@@ -145,10 +151,38 @@ namespace GMLib
                 InitializeDatabase();
                 initialized = true;
             }
-            string insertCommand = $"INSERT INTO Processes(Pid,Arch,Date,Path,Args) VALUES(" +
-                $"{process.Pid},\"{process.Arch}\",\"{process.Date}\",\"{process.Path}\",\"{process.Args}\");";
-            SqliteCommand insertTarget = new(insertCommand, db);
-            insertTarget.ExecuteNonQuery();
+            // Parameterizing query because of sql injection bug before
+            SqliteCommand insertCommand = new SqliteCommand("INSERT INTO Processes(Pid, Arch, Date, Path, Args) VALUES(@Pid, @Arch, @Date, @Path, @Args)", db);
+
+            SqliteParameter param = new SqliteParameter("@Pid", process.Pid);
+            insertCommand.Parameters.Add(new SqliteParameter()
+            {
+                ParameterName = "@Pid",
+                Value = process.Pid
+            });
+            insertCommand.Parameters.Add(new SqliteParameter()
+            {
+                ParameterName = "@Arch",
+                Value = process.Arch != null ? process.Arch : DBNull.Value 
+            });
+            insertCommand.Parameters.Add(new SqliteParameter()
+            {
+                ParameterName = "@Date",
+                Value = process.Date != null ? process.Date : DBNull.Value
+            });
+            insertCommand.Parameters.Add(new SqliteParameter()
+            {
+                ParameterName = "@Path",
+                Value = process.Path != null ? process.Path : DBNull.Value
+            });
+            insertCommand.Parameters.Add(new SqliteParameter()
+            {
+                ParameterName = "@Args",
+                Value = process.Args != null ? process.Args : DBNull.Value
+            });
+
+
+            insertCommand.ExecuteNonQuery();
         }
 
         public void AddSnapshot(GMSnapshot snapshot)
@@ -158,64 +192,142 @@ namespace GMLib
                 InitializeDatabase();
                 initialized = true;
             }
-            string insertCommand = $"INSERT INTO Snapshots(Id,Pid,Time,PointerSize) VALUES({snapshot.Id},{snapshot.Pid},{snapshot.Time}, {snapshot.PointerSize});";
-            SqliteCommand insertTarget = new(insertCommand, db);
-            insertTarget.ExecuteNonQuery();
+
+            // parameterizing query
+            SqliteCommand insertCommand = new SqliteCommand("INSERT INTO Snapshots(Id,Pid,Time,PointerSize) VALUES(@Id,@Pid,@Time,@PointerSize)", db);
+
+            insertCommand.Parameters.Add(new SqliteParameter()
+            {
+                ParameterName = "@Id",
+                Value = snapshot.Id
+            });
+            insertCommand.Parameters.Add(new SqliteParameter()
+            {
+                ParameterName = "@Pid",
+                Value = snapshot.Pid 
+            });
+            insertCommand.Parameters.Add(new SqliteParameter()
+            {
+                ParameterName = "@Time",
+                Value = snapshot.Time 
+            });
+            insertCommand.Parameters.Add(new SqliteParameter()
+            {
+                ParameterName = "@PointerSize",
+                Value = snapshot.PointerSize 
+            });
+
+            insertCommand.ExecuteNonQuery();
         }
         
         private void AddObject(Target target, GMObject obj)
         {
-            SqliteCommand cmdTarget;
+            SqliteCommand insertCommand;
 
             // Get the data value for object
             object objData = obj.Value();
             if (objData != null)
             {
-                string command = $"INSERT OR IGNORE INTO Objects(Id,ObjectId,Address,Type,Size,Value) VALUES(" +
-                    $"{target.Id}," +
-                    $"{obj.Index}," +
-                    $"{obj.Address}," +
-                    $"\"{obj.Type()}\"," +
-                    $"{obj.Size}," +
-                    "@Value);";
-                cmdTarget = new(command, db);
+
+                // parameterizing query
+                insertCommand = new SqliteCommand("INSERT OR IGNORE INTO Objects(Id,ObjectId,Address,Type,Size,Value) VALUES(@Id,@ObjectId,@Address,@Type,@Size,@Value)", db);
+
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Id",
+                    Value = target.Id
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@ObjectId",
+                    Value = obj.Index 
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Address",
+                    Value = obj.Address
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Type",
+                    Value = obj.Type() != null ? obj.Type() : DBNull.Value
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Size",
+                    Value = obj.Size
+                });
 
                 // Store bytes as blob
                 if (objData is System.Byte[])
                 {
-                    cmdTarget.Parameters.Add(new SqliteParameter()
+                    insertCommand.Parameters.Add(new SqliteParameter()
                     {
                         ParameterName = "@Value",
-                        Value = objData,
+                        Value = objData != null ? objData : DBNull.Value,
                         DbType = System.Data.DbType.Binary
                     });
                 }
                 else
-                    cmdTarget.Parameters.Add("@Value", SqliteType.Text).Value = objData;
-                cmdTarget.ExecuteNonQuery();
+                    insertCommand.Parameters.Add("@Value", SqliteType.Text).Value = objData;
+                insertCommand.ExecuteNonQuery();
             }
             else
             {
-                string command = $"INSERT OR IGNORE INTO Objects(Id,ObjectId,Address,Type,Size) VALUES(" +
-                    $"{target.Id}," +
-                    $"{obj.Index}," +
-                    $"{obj.Address}," +
-                    $"\"{obj.Type()}\"," +
-                    $"{obj.Size})";
-                cmdTarget = new(command, db);
-                cmdTarget.ExecuteNonQuery();
+                insertCommand = new SqliteCommand("INSERT OR IGNORE INTO Objects(Id,ObjectId,Address,Type,Size) VALUES(@Id,@ObjectId,@Address,@Type,@Size)", db);
+
+
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Id",
+                    Value = target.Id
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@ObjectId",
+                    Value = obj.Index
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Address",
+                    Value = obj.Address
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Type",
+                    Value = obj.Type() != null ? obj.Type() : DBNull.Value
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Size",
+                    Value = obj.Size 
+                });
+                insertCommand.ExecuteNonQuery();
             }
         }
         private void AddRefs(Target target)
         {
             foreach (GMRef referece in target.Refs)
             {
-                string command = $"INSERT OR IGNORE INTO Refs(Id,Address,Ref) VALUES(" +
-                    $"{target.Id}," +
-                    $"{referece.Address}," +
-                    $"{referece.Ref});";
-                SqliteCommand cmdTarget = new(command, db);
-                cmdTarget.ExecuteNonQuery();
+                SqliteCommand insertCommand = new SqliteCommand("INSERT OR IGNORE INTO Refs(Id,Address,Ref) VALUES(@Id,@Address,@Ref)", db);
+
+
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Id",
+                    Value = target.Id
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Address",
+                    Value = referece.Address
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Ref",
+                    Value = referece.Ref 
+                });
+                insertCommand.ExecuteNonQuery();
             }
         }
 
@@ -228,121 +340,239 @@ namespace GMLib
         }
         private void AddStackObjects(Target target)
         {
-            SqliteCommand cmdTarget;
-            string command;
+            SqliteCommand insertCommand;
 
             // Add threads
             foreach (GMThread thread in target.Threads)
             {
-                command = $"INSERT INTO Threads(Id,Tid,Context) VALUES(" +
-                    $"{target.Id},{thread.Tid},@Context);";
-                cmdTarget = new(command, db);
-                cmdTarget.Parameters.Add(new SqliteParameter()
+
+                insertCommand = new SqliteCommand("INSERT INTO Threads(Id,Tid,Context) VALUES(@Id,@Tid,@Context)", db);
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Id",
+                    Value = thread.Id
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Tid",
+                    Value = thread.Tid 
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
                 {
                     ParameterName = "@Context",
-                    Value = thread.Context,
+                    Value = thread.Context != null ? thread.Context : DBNull.Value,
                     DbType = System.Data.DbType.Binary
                 });
-                cmdTarget.ExecuteNonQuery();
+                insertCommand.ExecuteNonQuery();
             }
 
             // Add frames
             foreach (GMFrame frame in target.Frames)
             {
                 string frameStr = frame.Frame;
-                command = $"INSERT OR IGNORE INTO Frames(Id,Tid,StackPtr,IP,Frame) VALUES(" +
-                    $"{target.Id}," +
-                    $"{frame.Tid}," +
-                    $"{frame.StackPtr}," +
-                    $"{frame.Ip}," +
-                    $"\"{frameStr}\");";
-                cmdTarget = new(command, db);
-                cmdTarget.ExecuteNonQuery();
+
+                insertCommand = new SqliteCommand("INSERT OR IGNORE INTO Frames(Id,Tid,StackPtr,IP,Frame) VALUES(@Id,@Tid,@StackPtr,@IP,@Frame)", db);
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Id",
+                    Value = target.Id
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Tid",
+                    Value = frame.Tid
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@StackPtr",
+                    Value = frame.StackPtr
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@IP",
+                    Value = frame.Ip
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Frame",
+                    Value = frameStr != null ? frameStr : DBNull.Value
+                });
+                insertCommand.ExecuteNonQuery();
             }
 
             // Add stacks
             foreach (GMStack stack in target.Stacks)
             {
-                command = $"INSERT OR IGNORE INTO Stacks(Id,StackPtr,Tid,Object) VALUES(" +
-                    $"{target.Id}," +
-                    $"{stack.StackPtr}," +
-                    $"{stack.Tid}," +
-                    $"{stack.Object})";
-                cmdTarget = new(command, db);
-                cmdTarget.ExecuteNonQuery();
+                insertCommand = new SqliteCommand("INSERT OR IGNORE INTO Stacks(Id,StackPtr,Tid,Object) VALUES(@Id,@StackPtr,@Tid,@Object)", db);
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Id",
+                    Value = target.Id
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@StackPtr",
+                    Value = stack.StackPtr
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Tid",
+                    Value = stack.Tid
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Object",
+                    Value = stack.Object 
+                });
+                insertCommand.ExecuteNonQuery();
             }
         }
         private void AddHandles(Target target)
         {
-            SqliteCommand cmdTarget;
-            string command;
+            SqliteCommand insertCommand;
             foreach (GMHandle handle in target.Handles)
             {
-                command = $"INSERT INTO Handles(Id,Address,Object,Kind) VALUES(" +
-                    $"{target.Id}," +
-                    $"{handle.Address}," +
-                    $"{handle.Object}," +
-                    $"\"{handle.Kind}\");";
-                cmdTarget = new(command, db);
-                cmdTarget.ExecuteNonQuery();
+
+                insertCommand = new SqliteCommand("INSERT INTO Handles(Id,Address,Object,Kind) VALUES(@Id,@Address,@Object,@Kind)", db);
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Id",
+                    Value = target.Id
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Address",
+                    Value = handle.Address
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Object",
+                    Value = handle.Object 
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Kind",
+                    Value = handle.Kind != null ? handle.Kind : DBNull.Value
+                });
+                insertCommand.ExecuteNonQuery();
             }
         }
         private void AddAppDomains(Target target)
         {
-            SqliteCommand cmdTarget;
-            string command;
+            SqliteCommand insertCommand;
+
             HashSet<long> appdomainSet = new();
             foreach (GMAppDomain domain in target.AppDomains)
             {
                 if (appdomainSet.Add(domain.Aid))
                 {
-                    command = $"INSERT INTO AppDomains(Id,Aid,Name,Address) VALUES(" +
-                    $"{target.Id}," +
-                    $"{domain.Aid}," +
-                    $"\"{domain.Name}\"," +
-                    $"{domain.Address});";
-                    cmdTarget = new(command, db);
-                    cmdTarget.ExecuteNonQuery();
+
+                    insertCommand = new SqliteCommand("INSERT INTO AppDomains(Id,Aid,Name,Address) VALUES(@Id,@Aid,@Name,@Address)", db);
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@Id",
+                        Value = target.Id
+                    });
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@Aid",
+                        Value = domain.Aid
+                    });
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@Name",
+                        Value = domain.Name != null ? domain.Name : DBNull.Value
+                    });
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@Address",
+                        Value = domain.Address 
+                    });
+                    insertCommand.ExecuteNonQuery();
                 }
             }
         }
 
         private void AddRuntimes(Target target)
         {
-            SqliteCommand cmdTarget;
-            string command;
+            SqliteCommand insertCommand;
+
             foreach (GMRuntime info in target.Runtimes)
             {
-                command = $"INSERT INTO Runtimes(Id,Version,Dac,Arch) VALUES(" +
-                    $"{target.Id}," +
-                    $"\"{info.Version}\"," +
-                    $"\"{info.Dac}\"," +
-                    $"\"{info.Arch}\");";
-                cmdTarget = new(command, db);
-                cmdTarget.ExecuteNonQuery();
+
+                insertCommand = new SqliteCommand("INSERT INTO Runtimes(Id,Version,Dac,Arch) VALUES(@Id,@Version,@Dac,@Arch)", db);
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Id",
+                    Value = target.Id
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Version",
+                    Value = info.Version != null ? info.Version : DBNull.Value
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Dac",
+                    Value = info.Dac != null ? info.Dac : DBNull.Value
+                });
+                insertCommand.Parameters.Add(new SqliteParameter()
+                {
+                    ParameterName = "@Arch",
+                    Value = info.Arch != null ? info.Arch : DBNull.Value
+                });
+                insertCommand.ExecuteNonQuery();
             }
         }
 
         // XXX: AppDomain id (Aid) as a key here!!
         private void AddModules(Target target)
         {
-            SqliteCommand cmdTarget;
-            string command;
+            SqliteCommand insertCommand;
+
             HashSet<ulong> modSet = new();
             foreach (GMModule module in target.Modules)
             {
                 if (modSet.Add(module.AsmAddress))
                 {
-                    command = $"INSERT INTO Modules(Id,AsmAddress,ImgAddress,Name,AsmName,IsDynamic,IsPe) VALUES(" +
-                        $"{target.Id}," +
-                        $"{module.AsmAddress}," +
-                        $"{module.ImgAddress}," +
-                        $"\"{module.Name}\"," +
-                        $"\"{module.AsmName}\"," +
-                        $"{module.IsDynamic}," +
-                        $"{module.IsPe});";
-                    cmdTarget = new(command, db);
-                    cmdTarget.ExecuteNonQuery();
+
+                    insertCommand = new SqliteCommand("INSERT INTO Modules(Id,AsmAddress,ImgAddress,Name,AsmName,IsDynamic,IsPe) VALUES(@Id,@AsmAddress,@ImgAddress,@Name,@AsmName,@IsDynamic,@IsPe)", db);
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@Id",
+                        Value = target.Id
+                    });
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@AsmAddress",
+                        Value = module.AsmAddress 
+                    });
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@ImgAddress",
+                        Value = module.ImgAddress 
+                    });
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@Name",
+                        Value = module.Name != null ? module.Name : DBNull.Value
+                    });
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@AsmName",
+                        Value = module.AsmName != null ? module.AsmName : DBNull.Value
+                    });
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@IsDynamic",
+                        Value = module.IsDynamic 
+                    });
+                    insertCommand.Parameters.Add(new SqliteParameter()
+                    {
+                        ParameterName = "@IsPe",
+                        Value = module.IsPe 
+                    });
+                    insertCommand.ExecuteNonQuery();
                 }
             }
         }
